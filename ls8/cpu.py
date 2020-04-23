@@ -44,6 +44,7 @@ class CPU:
 
 # `ram_write()` should accept a value to write, and the address to write it to.
 
+
     def ram_write(self, value, address):
         print('ram_write = ', self.ram[address])
         self.ram[address] = value
@@ -64,12 +65,12 @@ class CPU:
         """
 
         print(f"TRACE: %02X | %02X %02X %02X |" % (
-            self.pc,
+            self.counter,
             # self.fl,
             # self.ie,
-            self.ram_read(self.pc),
-            self.ram_read(self.pc + 1),
-            self.ram_read(self.pc + 2)
+            self.ram_read(self.counter),
+            self.ram_read(self.counter + 1),
+            self.ram_read(self.counter + 2)
         ), end='')
 
         for i in range(8):
@@ -79,5 +80,47 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
+    # It needs to read the memory address that's stored in register `PC`, and store
+    # that result in `IR`, the _Instruction Register_. This can just be a local
+    # variable in `run()`.
+        self.counter = counter
+    # command = memory[counter]
+        print('counter = ', counter)
+    # initialize running
         running = True
+    # commands assigned to a value
+
+    # ldi - Set the value of a register to an integer.
+        ldi = 0b10000010
+    # prn - Print numeric value stored in the given register. Print to the console the decimal integer value that is stored in the given register.
+        prn = 0b01000111
+        hlt = 0b00000001
+
         while running is True:
+            command = self.ram_read(counter)
+            # command = memory[counter]
+
+    #  Using `ram_read()`, read the bytes at `PC+1` and `PC+2` from RAM into variables `operand_a` and `operand_b` in case the instruction needs them.
+            operand_a = self.ram_read(counter + 1)
+            operand_b = self.ram_read(counter + 2)
+
+    # Then, depending on the value of the opcode, perform the actions needed for the
+    # instruction per the LS-8 spec. Maybe an `if-elif` cascade...? There are other
+    # options, too.
+            if command == ldi:
+                # ldi - Set the value of a register to an integer.
+                self.registers[operand_a] = operand_b
+                counter += 3
+
+            elif command == prn:
+                # prn - Print numeric value stored in the given register. Print to the console the decimal integer value that is stored in the given register.
+                print(self.registers[operand_a])
+                counter += 2
+
+            elif command == hlt:
+                # break out of loop
+                running = False
+            else:
+                print('Error!!')
+                # exit python program
+                sys.exit(1)
