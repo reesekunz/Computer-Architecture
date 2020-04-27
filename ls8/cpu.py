@@ -6,7 +6,6 @@ import sys
 class CPU:
     """Main CPU class."""
 
-
 # Add list properties to the `CPU` class to hold 256 bytes of memory and 8 general-purpose registers.
     def __init__(self):
         """Construct a new CPU."""
@@ -16,27 +15,50 @@ class CPU:
 
     def load(self):
         """Load a program into memory."""
-        address = 0
-        # For now, we've just hardcoded a program:
+        if len(sys.argv) != 2:
+            print(f"usage: {sys.argv[0]} filename")
+            sys.exit(2)
+        try:
+            address = 0
+            with open(filename) as file:
+                # with open("print8.ls8") as file:
+                for line in file:
+                    comment_split = line.split('#')
+                    number_string = comment_split[0].strip()
 
-        program = [
-            # From print8.ls8
-            0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111,  # PRN R0
-            0b00000000,
-            0b00000001,  # HLT
-        ]
-
+                if number_string == '':
+                    pass
+                else:
+                    num = int(number_string, 2)
+                    print(f'{number_string} binary is {num} in decimal')
+                    memory[address] = num
+                    address += 1
+        except FileNotFoundError:
+            print(f'{sys.argv[0]}: could not find {sys.argv[1]}')
+            sys.exit(2)
         for instruction in program:
             self.ram[address] = instruction
             address += 1
-# the _Memory Address Register_ (MAR) and the _Memory Data Register_ (MDR). The
-# > MAR contains the address that is being read or written to. The MDR contains
-# > the data that was read or the data to write.
+
+       # For now, we've just hardcoded a program:
+
+       # program here is RAM (our memory). First thing we load into memory is the program instructions itself.
+       # program = [
+       #     # From print8.ls8
+       #     0b10000010,  # LDI R0,8
+       #     0b00000000,
+       #     0b00001000,
+       #     0b01000111,  # PRN R0
+       #     0b00000000,
+       #     0b00000001,  # HLT
+       # ]
+
+   # MAR - Memory address register (address)
+   # MDR - Memory data register (value)
+   # Can use these as parameters in ram_read (MAR) and ram_write (MDR)
 
 # `ram_read()` should accept the address to read and return the value stored there.
+
     def ram_read(self, address):
         print('ram_read = ', self.ram[address])
         return self.ram[address]
@@ -124,3 +146,6 @@ class CPU:
                 print('Error!!')
                 # exit python program
                 sys.exit(1)
+
+
+CPU.load(sys.argv[1])
