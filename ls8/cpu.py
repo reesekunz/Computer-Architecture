@@ -28,12 +28,24 @@ class CPU:
     # STEP 6 : Implement the `PRN` instruction handler
     # PRN machine  code: 01000111
 
+    # STEP 8: Implement a Multiply and Print the Result
+    # MUL machine code: 10100010
+
     # Program instructions for these opcodes are being handled in the run() function
 
         self.opcodes = {
             0b00000001: "HLT",
             0b10000010: "LDI",
-            0b01000111: "PRN"
+            0b01000111: "PRN",
+            0b10100010: "MUL"
+        }
+
+    # STEP 9: Beautify your `run()` loop (part 2 is bottom of this file)
+        self.branchtable = {
+            "HLT": self.hlt,
+            "LDI": self.ldi,
+            "PRN": self.prn,
+            # "MUL": self.mul -> MUL doesnt go here since it is an alu. Only non ALU operations need to be passed in here (see lines 191-197)
         }
 
     # STEP 2: Add RAM functions
@@ -49,33 +61,47 @@ class CPU:
     def ram_write(self, mar, mdr):
         self.ram[mar] = mdr
 
-    def load(self):
+    # filename param comes from cpu.load(sys.argv[1]) in ls8.p8. Were passing filename in as sys.argv[1] so we access the file through the terminal command.
+    def load(self, filename):
         """Load a program into memory."""
 
         address = 0
 
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111,  # PRN R0
-            0b00000000,
-            0b00000001,  # HLT
-        ]
+       # STEP 7: Un-hardcode the machine code
+       # Very similar to what we did with guided project load_memory()
+       # Can now run python3 ls8.py examples/print8.ls8 in terminal (returns 8)
+        try:
+            with open(filename) as file:
+                for line in file:
+                    comment_split = line.split("#")
+                    number_string = comment_split[0].strip()
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+                    if number_string == "":
+                        continue
+
+                    num = int(number_string, 2)
+                    self.ram[address] = num
+                    address += 1
+
+        except FileNotFoundError:
+            print(f'{sys.argv[0]}: could not find {sys.argv[1]}')
+            sys.exit(2)
+
+            for instruction in program:
+                self.ram[address] = instruction
+                address += 1
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
         if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
+            self.registers[reg_a] += self.registers[reg_b]
         # elif op == "SUB": etc
+        # Multiply command from MUL command added in step 8
+        elif op == "MUL":
+            self.registers[reg_a] *= self.registers[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -149,13 +175,26 @@ class CPU:
             # = 0b 10
 
             # * `C` 1 if this instruction sets the PC
-            # Masking to see if C is set to 1. Will return 1 if True, 0 if False.
-            sets_pc = ((IR >> 4 & 0b0001) & 0b0001) == 1
+            # Shift 4 then masking to see if C is set to 1. Will return 1 if True, 0 if False.
+            sets_pc = ((IR >> 4) & 0b0001) == 1
+
+            # `B` 1 if this is an ALU operation.
+            # Shift 5 then masking to see if B is set to 1. Will return 1 if True, 0 if False.
+            is_alu_operation = ((IR >> 5) & 0b0001) == 1
+
+            opcode = self.opcodes[IR]
+
             # Instructions that set the PC from spec are call, return, jump.
             if not sets_pc:
                 self.pc += 1 + num_operands
 
-            opcode = self.opcodes[IR]
+            if is_alu_operation:
+                self.alu(opcode, operand_a, operand_b)
+            # Can now run python3 ls8.py examples/mult.ls8 (returns 72) ^^
+
+            # Not an alu operation. Need to look up in branchtable.
+            else:
+                self.branchtable[opcode](operand_a, operand_b)
 
             # Set the value of a register to an integer (already got the values out with operand_a and operand_b)
             if opcode == "LDI":
@@ -169,3 +208,15 @@ class CPU:
             elif opcode == 'HLT':
                 # Exit the system
                 sys.exit(0)
+    # # STEP 9 (cont.): Beautify your `run()` loop
+    # these helper functions are part of our branch table (using them to clean up our run function)
+
+    def hlt(self, _, __): # Python needs us to pass in 3 arguments even though we dont care about the other 2.
+        self.running = False
+        # could also use sys.exit(0)
+
+    def prn(self, operand_a, _): 
+        print(self.registers[operand_a])
+
+    def ldi(self, operand_a, operand_b):
+        self.registers[operand_a] = operand_b
