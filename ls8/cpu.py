@@ -159,22 +159,27 @@ class CPU:
             # *Grab the values from the two registers
             register_A_value = self.registers[reg_a]
             register_B_value = self.registers[reg_b]
+            # print("A = ", register_A_value)
+            # print("B = ", register_B_value)
 
             # *equal
             if register_A_value == register_B_value:
-                # *set Equal 'E' flag to 1. (True) => 0b00000001
+                # print("A equals B")
+                # *set Equal 'E' flag to 1. (True) => 0b00000001 
                 self.fl = 0b00000001
 
             # *less than
             elif register_A_value < register_B_value:
+                # print("A < B")
                 # *set the Less-than `L` flag to 1 => 0b00000100
                 self.fl = 0b00000100
-
+                
              # *greater than
             elif register_A_value > register_B_value:
+                # print("A > B")
                 # *set the Greater-than `G` flag to 1
                 self.fl = 0b00000010
-
+                
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -355,6 +360,7 @@ class CPU:
         if is_equal_flag:
             # self.pc = self.registers[operand_a] same as...
             return self.jmp(operand_a, 0)
+        # increment pc + 2
         else:
             self.pc += 2
 
@@ -366,6 +372,7 @@ class CPU:
         if not is_equal_flag:
             # jump to the address stored in the given register.
             return self.jmp(operand_a, 0)
+        # increment pc + 2
         else:
             self.pc += 2
             
