@@ -5,6 +5,7 @@
         # CMP machine code: 10100111
 
     # 2. Add the `JMP` instruction
+
     # 3. Add the `JEQ` and `JNE` instructions
 
     # any note with an '*' next to it and its corresponding code is related to the sprint challenge
@@ -50,6 +51,13 @@ class CPU:
     # CALL machine code: 01010000
     # RET (return) machine code: 00010001
 
+    # *Sprint Challenge Step 2: Add the `JMP` instruction
+    # *JMP machine code: 01010100
+
+    # *Sprint Challenge Step 3: Add the `JEQ` and `JNE` instructions
+    # *JEQ machine code: 01010101
+    # *JNE machine code: 01010110
+
     # Program instructions for these opcodes are being handled in the run() function
 
         self.opcodes = {
@@ -61,9 +69,13 @@ class CPU:
             0b01000110: "POP",
             0b01010000: "CALL",
             0b00010001: "RET",
-            # Was getting KeyError: 160. 0b10100000 = 160, which is the machine code for ADD. Error meant I was missing the ADD code. ADD is already an ALU operation so dont need to add it to branchtable or as helper function at bottom.
+            # Was getting KeyError: 160. bin(160) = 0b10100000, which is the machine code for ADD. Error meant I was missing the ADD code. ADD is already an ALU operation so dont need to add it to branchtable or as helper function at bottom.
             0b10100000: "ADD",
-            0b10100111: "CMP"
+            0b10100111: "CMP",
+            0b01010100: "JMP",
+            0b01010101: "JEQ",
+            0b01010110: "JNE"
+
         }
 
     # STEP 9: Beautify your `run()` loop
@@ -76,7 +88,11 @@ class CPU:
             "PUSH": self.push,
             "POP": self.pop,
             "CALL": self.call,
-            "RET": self.ret
+            "RET": self.ret,
+            # *Dont need CMP since its an alu.
+            "JMP": self.jmp,
+            "JEQ": self.jeq,
+            "JNE": self.jne
         }
 
     # STEP 2: Add RAM functions
@@ -253,7 +269,7 @@ class CPU:
             else:
                 self.branchtable[opcode](operand_a, operand_b)
 
-            # These are now being handled below with ldi, prn, and hlt helper functions
+            # These are now being handled below with ldi, prn, and hlt helper functions so dont need it here. Keeping for future reference.
 
             # Set the value of a register to an integer (already got the values out with operand_a and operand_b)
             # if opcode == "LDI":
@@ -321,3 +337,40 @@ class CPU:
         address = self.ram_read(stack_pointer)
 
         self.pc = address
+
+    #* Sprint Challenge 
+    # In these cases, the `PC` does not automatically advance to the next instruction, since it was set explicitly.
+    # Checking on line 262 if sets_pc. If it doesnt set pc we need to set it down here instead.
+
+    def jmp(self, operand_a, _ ):
+        # *Set pc to the adress stored in the given register.
+        self.pc = self.registers[operand_a]
+
+    # *If `equal` flag is set to True (1), jump to the address stored in the given register.
+    # Equal 'E' flag to 1. (True) => 0b00000001
+    # # *`FL` bits: `00000LGE`
+    def jeq(self, operand_a, _):
+        # masking to see if E = 1
+        is_equal_flag = (self.fl & 0b00000001) == 1
+        if is_equal_flag:
+            # self.pc = self.registers[operand_a] same as...
+            return self.jmp(operand_a, 0)
+        else:
+            self.pc += 2
+
+    # If `E` flag is clear (false, 0), jump to the address stored in the given register.
+    def jne(self, operand_a, _):
+        # masking to see if E = 1
+        is_equal_flag = (self.fl & 0b00000001) == 1
+        # if E does NOT = 1
+        if not is_equal_flag:
+            # jump to the address stored in the given register.
+            return self.jmp(operand_a, 0)
+        else:
+            self.pc += 2
+            
+        
+
+        
+
+
