@@ -6,70 +6,30 @@ import sys
 class CPU:
     """Main CPU class."""
 
-# Add list properties to the `CPU` class to hold 256 bytes of memory and 8 general-purpose registers.
     def __init__(self):
         """Construct a new CPU."""
-        self.ram = [0] * 256
-        self.registers = [0] * 8  # [0, 0, 0, 0, 0, 0, 0, 0]
-        self.counter = 0
+        pass
 
     def load(self):
         """Load a program into memory."""
-        if len(sys.argv) != 2:
-            print(f"usage: {sys.argv[0]} filename")
-            sys.exit(2)
-        try:
-            address = 0
-            with open(filename) as file:
-                # with open("print8.ls8") as file:
-                for line in file:
-                    comment_split = line.split('#')
-                    number_string = comment_split[0].strip()
 
-                if number_string == '':
-                    pass
-                else:
-                    num = int(number_string, 2)
-                    print(f'{number_string} binary is {num} in decimal')
-                    memory[address] = num
-                    address += 1
-        except FileNotFoundError:
-            print(f'{sys.argv[0]}: could not find {sys.argv[1]}')
-            sys.exit(2)
+        address = 0
+
+        # For now, we've just hardcoded a program:
+
+        program = [
+            # From print8.ls8
+            0b10000010,  # LDI R0,8
+            0b00000000,
+            0b00001000,
+            0b01000111,  # PRN R0
+            0b00000000,
+            0b00000001,  # HLT
+        ]
+
         for instruction in program:
             self.ram[address] = instruction
             address += 1
-
-       # For now, we've just hardcoded a program:
-
-       # program here is RAM (our memory). First thing we load into memory is the program instructions itself.
-       # program = [
-       #     # From print8.ls8
-       #     0b10000010,  # LDI R0,8
-       #     0b00000000,
-       #     0b00001000,
-       #     0b01000111,  # PRN R0
-       #     0b00000000,
-       #     0b00000001,  # HLT
-       # ]
-
-   # MAR - Memory address register (address)
-   # MDR - Memory data register (value)
-   # Can use these as parameters in ram_read (MAR) and ram_write (MDR)
-
-# `ram_read()` should accept the address to read and return the value stored there.
-
-    def ram_read(self, address):
-        print('ram_read = ', self.ram[address])
-        return self.ram[address]
-
-
-# `ram_write()` should accept a value to write, and the address to write it to.
-
-
-    def ram_write(self, value, address):
-        print('ram_write = ', self.ram[address])
-        self.ram[address] = value
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -87,12 +47,12 @@ class CPU:
         """
 
         print(f"TRACE: %02X | %02X %02X %02X |" % (
-            self.counter,
+            self.pc,
             # self.fl,
             # self.ie,
-            self.ram_read(self.counter),
-            self.ram_read(self.counter + 1),
-            self.ram_read(self.counter + 2)
+            self.ram_read(self.pc),
+            self.ram_read(self.pc + 1),
+            self.ram_read(self.pc + 2)
         ), end='')
 
         for i in range(8):
@@ -102,50 +62,4 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-    # It needs to read the memory address that's stored in register `PC`, and store
-    # that result in `IR`, the _Instruction Register_. This can just be a local
-    # variable in `run()`.
-        self.counter = counter
-    # command = memory[counter]
-        print('counter = ', counter)
-    # initialize running
-        running = True
-    # commands assigned to a value
-
-    # ldi - Set the value of a register to an integer.
-        ldi = 0b10000010
-    # prn - Print numeric value stored in the given register. Print to the console the decimal integer value that is stored in the given register.
-        prn = 0b01000111
-        hlt = 0b00000001
-
-        while running is True:
-            command = self.ram_read(counter)
-            # command = memory[counter]
-
-    #  Using `ram_read()`, read the bytes at `PC+1` and `PC+2` from RAM into variables `operand_a` and `operand_b` in case the instruction needs them.
-            operand_a = self.ram_read(counter + 1)
-            operand_b = self.ram_read(counter + 2)
-
-    # Then, depending on the value of the opcode, perform the actions needed for the
-    # instruction per the LS-8 spec. Maybe an `if-elif` cascade...? There are other
-    # options, too.
-            if command == ldi:
-                # ldi - Set the value of a register to an integer.
-                self.registers[operand_a] = operand_b
-                counter += 3
-
-            elif command == prn:
-                # prn - Print numeric value stored in the given register. Print to the console the decimal integer value that is stored in the given register.
-                print(self.registers[operand_a])
-                counter += 2
-
-            elif command == hlt:
-                # break out of loop
-                running = False
-            else:
-                print('Error!!')
-                # exit python program
-                sys.exit(1)
-
-
-CPU.load(sys.argv[1])
+        pass
