@@ -31,13 +31,19 @@ class CPU:
     # STEP 8: Implement a Multiply and Print the Result
     # MUL machine code: 10100010
 
+    # STEP 10: Implement System Stack. Add `PUSH` and `POP` instructions.
+    # PUSH machine code: 01000101
+    # POP machine  code: 01000110
+
     # Program instructions for these opcodes are being handled in the run() function
 
         self.opcodes = {
             0b00000001: "HLT",
             0b10000010: "LDI",
             0b01000111: "PRN",
-            0b10100010: "MUL"
+            0b10100010: "MUL",
+            0b01000101: "PUSH",
+            0b01000110: "POP"
         }
 
     # STEP 9: Beautify your `run()` loop (part 2 is bottom of this file)
@@ -46,6 +52,8 @@ class CPU:
             "LDI": self.ldi,
             "PRN": self.prn,
             # "MUL": self.mul -> MUL doesnt go here since it is an alu. Only non ALU operations need to be passed in here (see lines 191-197)
+            "PUSH": self.push,
+            "POP": self.pop
         }
 
     # STEP 2: Add RAM functions
@@ -196,27 +204,52 @@ class CPU:
             else:
                 self.branchtable[opcode](operand_a, operand_b)
 
+            # These are now being handled below with ldi, prn, and hlt helper functions
+
             # Set the value of a register to an integer (already got the values out with operand_a and operand_b)
-            if opcode == "LDI":
-                self.registers[operand_a] = operand_b
+            # if opcode == "LDI":
+            #     self.registers[operand_a] = operand_b
 
-            # Print numeric value stored in the given register.
-            elif opcode == "PRN":
-                print(self.registers[operand_a])
+            # # Print numeric value stored in the given register.
+            # elif opcode == "PRN":
+            #     print(self.registers[operand_a])
 
-            # We can consider `HLT` to be similar to Python's `exit()` in that we stop whatever we are doing, wherever we are.
-            elif opcode == 'HLT':
-                # Exit the system
-                sys.exit(0)
+            # # We can consider `HLT` to be similar to Python's `exit()` in that we stop whatever we are doing, wherever we are.
+            # elif opcode == 'HLT':
+            #     # Exit the system
+            #     sys.exit(0)
+
     # # STEP 9 (cont.): Beautify your `run()` loop
     # these helper functions are part of our branch table (using them to clean up our run function)
 
-    def hlt(self, _, __): # Python needs us to pass in 3 arguments even though we dont care about the other 2.
-        self.running = False
-        # could also use sys.exit(0)
+    # Python needs us to pass in 3 arguments even though we dont care about the other 2.
+    def hlt(self, _, __):
+        # exit the system
+        sys.exit(0)
+        # could also use self.running = False
 
-    def prn(self, operand_a, _): 
+    def prn(self, operand_a, _):
         print(self.registers[operand_a])
 
     def ldi(self, operand_a, operand_b):
         self.registers[operand_a] = operand_b
+
+    # Can now run python3 ls8.py examples/stack.ls8 with Push and Pop methods (should return: 2, 4, 1).
+
+    def push(self, operand_a, _):
+        # Decrement the SP (stack pointer)
+        self.registers[7] -= 1
+        # Copy the value in the given register to the address pointed to by`SP`.
+        stack_pointer = self.registers[7]
+        value = self.registers[operand_a]
+
+        self.ram_write(stack_pointer, value)
+
+    def pop(self, operand_a, _):
+        # Copy the value from the address pointed to by `SP` to the given register.
+        stack_pointer = self.registers[7]
+        value = self.ram_read(stack_pointer)
+
+        self.registers[operand_a] = value
+        # Increment `SP`.
+        self.registers[7] += 1
