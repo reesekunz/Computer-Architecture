@@ -1,4 +1,13 @@
 """CPU functionality."""
+# SPRINT CHALLENGE MVP requirements:
+    # 1. Add the `CMP` instruction and `equal` flag to your LS-8
+        # CMP is an instruction handled by the ALU => like MUL it doesnt go in branchtable or have its own function.
+        # CMP machine code: 10100111
+
+    # 2. Add the `JMP` instruction
+    # 3. Add the `JEQ` and `JNE` instructions
+
+    # any note with an '*' next to it and its corresponding code is related to the sprint challenge
 
 import sys
 
@@ -18,6 +27,8 @@ class CPU:
         self.pc = 0
         # The SP points at the value at the top of the stack (most recently pushed), or at address `F4` if the stack is empty.
         self.registers[7] = 0xF4
+        # *initialize flag
+        self.fl = 0b00000000
 
     # STEP 4: Implement the `HLT` instruction handler
     # HLT machine code: 00000001 (from spec)
@@ -52,6 +63,7 @@ class CPU:
             0b00010001: "RET",
             # Was getting KeyError: 160. 0b10100000 = 160, which is the machine code for ADD. Error meant I was missing the ADD code. ADD is already an ALU operation so dont need to add it to branchtable or as helper function at bottom.
             0b10100000: "ADD",
+            0b10100111: "CMP"
         }
 
     # STEP 9: Beautify your `run()` loop
@@ -117,10 +129,36 @@ class CPU:
 
         if op == "ADD":
             self.registers[reg_a] += self.registers[reg_b]
-        # elif op == "SUB": etc
         # Multiply command from MUL command added in step 8
         elif op == "MUL":
             self.registers[reg_a] *= self.registers[reg_b]
+
+        # *Compare the values in two registers.
+            # *If they are equal, set the Equal `E` flag to 1, otherwise set it to 0.
+            # *If registerA is less than registerB, set the Less-than `L` flag to 1, otherwise set it to 0.
+            # *If registerA is greater than registerB, set the Greater-than `G` flag to 1, otherwise set it to 0.
+
+        # *`FL` bits: `00000LGE`
+        elif op == "CMP":
+            # *Grab the values from the two registers
+            register_A_value = self.registers[reg_a]
+            register_B_value = self.registers[reg_b]
+
+            # *equal
+            if register_A_value == register_B_value:
+                # *set Equal 'E' flag to 1. (True) => 0b00000001
+                self.fl = 0b00000001
+
+            # *less than
+            elif register_A_value < register_B_value:
+                # *set the Less-than `L` flag to 1 => 0b00000100
+                self.fl = 0b00000100
+
+             # *greater than
+            elif register_A_value > register_B_value:
+                # *set the Greater-than `G` flag to 1
+                self.fl = 0b00000010
+
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -132,7 +170,7 @@ class CPU:
 
         print(f"TRACE: %02X | %02X %02X %02X |" % (
             self.pc,
-            # self.fl,
+            self.fl,
             # self.ie,
             self.ram_read(self.pc),
             self.ram_read(self.pc + 1),
