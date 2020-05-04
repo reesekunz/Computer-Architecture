@@ -35,6 +35,10 @@ class CPU:
     # PUSH machine code: 01000101
     # POP machine  code: 01000110
 
+    # STEP 11: Implement Subroutine Calls. Add 'CALL' and "RET" instructions.
+    # CALL machine code: 01010000
+    # RET (return) machine code: 00010001
+
     # Program instructions for these opcodes are being handled in the run() function
 
         self.opcodes = {
@@ -43,17 +47,24 @@ class CPU:
             0b01000111: "PRN",
             0b10100010: "MUL",
             0b01000101: "PUSH",
-            0b01000110: "POP"
+            0b01000110: "POP",
+            0b01010000: "CALL",
+            0b00010001: "RET",
+            # Was getting KeyError: 160. 0b10100000 = 160, which is the machine code for ADD. Error meant I was missing the ADD code. ADD is already an ALU operation so dont need to add it to branchtable or as helper function at bottom.
+            0b10100000: "ADD",
         }
 
-    # STEP 9: Beautify your `run()` loop (part 2 is bottom of this file)
+    # STEP 9: Beautify your `run()` loop
+    # These are all separate helper functions that we define at the bottom
         self.branchtable = {
             "HLT": self.hlt,
             "LDI": self.ldi,
             "PRN": self.prn,
             # "MUL": self.mul -> MUL doesnt go here since it is an alu. Only non ALU operations need to be passed in here (see lines 191-197)
             "PUSH": self.push,
-            "POP": self.pop
+            "POP": self.pop,
+            "CALL": self.call,
+            "RET": self.ret
         }
 
     # STEP 2: Add RAM functions
@@ -192,7 +203,7 @@ class CPU:
 
             opcode = self.opcodes[IR]
 
-            # Instructions that set the PC from spec are call, return, jump.
+            # If handler sets PC directly, we dont want to to advance PC to the next instruction (eg. 'CALL' or "JMP")
             if not sets_pc:
                 self.pc += 1 + num_operands
 
@@ -253,3 +264,22 @@ class CPU:
         self.registers[operand_a] = value
         # Increment `SP`.
         self.registers[7] += 1
+
+    # Call - Calls a subroutine (function) at the address stored in the register.
+    # Can now run python3 ls8.py examples/call.ls8 (should return 20, 30, 36, 60)
+    def call(self, operand_a, _):
+        # push instruction onto the stack
+        self.registers[7] -= 1
+        stack_pointer = self.registers[7]
+        self.ram_write(stack_pointer, self.pc + 2)
+
+        # Set pc to the adress stored in the given register.
+        self.pc = self.registers[operand_a]
+
+    # Ret - Return from subroutine. Pop the value from the top of the stack and store it in the `PC`.
+    def ret(self, operand_a, _):
+
+        stack_pointer = self.registers[7]
+        address = self.ram_read(stack_pointer)
+
+        self.pc = address
